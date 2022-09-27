@@ -42,5 +42,4 @@ class Kobo(object):
             f'{self.url}/{self.api}/assets/{uid}/data.json',
             headers=self.auth_headers
         )
-        print(response.json())
         return response.json()["results"]

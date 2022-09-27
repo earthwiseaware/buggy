@@ -1,2 +1,4 @@
 .devcontainer
 *.pyc
+build/
+buggy.egg-info/

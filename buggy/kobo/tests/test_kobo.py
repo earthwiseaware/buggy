@@ -8,18 +8,17 @@ from ..kobo import (
     Kobo
 )
 
-class TestKoboAuth(unittest.TestCase):
+def register_token_url():
+    httpretty.register_uri(
+        httpretty.GET, "https://kf.kobotoolbox.org/token?format=json",
+        body=json.dumps({"token": "what are you token about?"})
+    )
 
-    @staticmethod
-    def register_token_url():
-        httpretty.register_uri(
-            httpretty.GET, "https://kf.kobotoolbox.org/token?format=json",
-            body=json.dumps({"token": "what are you token about?"})
-        )
+class TestKoboAuth(unittest.TestCase):
 
     @httpretty.activate
     def test_get_token(self):
-        self.register_token_url()
+        register_token_url()
 
         kobo = Kobo("user", "1234")
         assert kobo.token is None
@@ -32,7 +31,7 @@ class TestKoboAuth(unittest.TestCase):
 
     @httpretty.activate
     def test_need_new_token(self):
-        self.register_token_url()
+        register_token_url()
 
         kobo = Kobo("user", "1234", time_to_stale=1)
         assert kobo._need_new_token()
@@ -46,11 +45,11 @@ class TestKoboAuth(unittest.TestCase):
 
     @httpretty.activate
     def test_ensure_authorized(self):
-        self.register_token_url()
+        register_token_url()
 
         httpretty.register_uri(
             httpretty.GET, "https://kf.kobotoolbox.org/api/v2/assets/5678/data.json",
-            body=json.dumps({})
+            body=json.dumps({"results": "stuff"})
         )
 
         kobo = Kobo("user", "1234", time_to_stale=1)
@@ -69,3 +68,21 @@ class TestKoboAuth(unittest.TestCase):
         assert kobo.token_refresh_time > last_token_refresh_time
 
         assert dict(httpretty.last_request().headers)["Authorization"] == "Token what are you token about?"
+
+class TestPullData(unittest.TestCase):
+    @httpretty.activate
+    def test_base_case(self):
+        httpretty.register_uri(
+            httpretty.GET, "https://kf.kobotoolbox.org/api/v2/assets/5678/data.json",
+            body=json.dumps({"results": ["some", "data"]})
+        )
+
+        register_token_url()
+
+        kobo = Kobo("user", "1234")
+
+        data = kobo.pull_data("5678")
+        assert data == ["some", "data"]
+
+        assert dict(httpretty.last_request().headers)["Authorization"] == "Token what are you token about?"
+

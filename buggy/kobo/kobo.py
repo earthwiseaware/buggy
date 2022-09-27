@@ -1,4 +1,5 @@
 import requests
+import json
 
 from time import time
 from requests.auth import HTTPBasicAuth
@@ -31,7 +32,7 @@ class Kobo(object):
         def check_auth_then_run_method(self, *args, **kwargs):
             if self._need_new_token():
                 self._get_new_token()
-            method(self, *args, **kwargs)
+            return method(self, *args, **kwargs)
 
         return check_auth_then_run_method
 
@@ -41,4 +42,4 @@ class Kobo(object):
             f'{self.url}/{self.api}/assets/{uid}/data.json',
             headers=self.auth_headers
         )
-        return response.json()
+        return response.json()["results"]

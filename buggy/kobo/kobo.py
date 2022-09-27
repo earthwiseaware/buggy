@@ -1,5 +1,4 @@
 import requests
-import json
 
 from time import time
 from requests.auth import HTTPBasicAuth
@@ -43,3 +42,12 @@ class Kobo(object):
             headers=self.auth_headers
         )
         return response.json()["results"]
+
+    @ensure_authorized
+    def pull_image(self, file_path, uid, instance, id):
+        response = requests.get(
+            f'{self.url}/{self.api}/assets/{uid}/data/{instance}/attachments/{id}/',
+            headers=self.auth_headers
+        )
+        with open(file_path, 'wb') as fh:
+            fh.write(response.content)

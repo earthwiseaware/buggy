@@ -1,8 +1,9 @@
+import os
 import unittest
 import httpretty
 import json
 
-from time import sleep
+from time import sleep, time
 
 from ..kobo import (
     Kobo
@@ -69,15 +70,15 @@ class TestKoboAuth(unittest.TestCase):
 
         assert dict(httpretty.last_request().headers)["Authorization"] == "Token what are you token about?"
 
-class TestPullData(unittest.TestCase):
+class TestPulls(unittest.TestCase):
     @httpretty.activate
-    def test_base_case(self):
+    def test_pull_data(self):
+        register_token_url()
+        
         httpretty.register_uri(
             httpretty.GET, "https://kf.kobotoolbox.org/api/v2/assets/5678/data.json",
             body=json.dumps({"results": ["some", "data"]})
         )
-
-        register_token_url()
 
         kobo = Kobo("user", "1234")
 
@@ -86,3 +87,28 @@ class TestPullData(unittest.TestCase):
 
         assert dict(httpretty.last_request().headers)["Authorization"] == "Token what are you token about?"
 
+    @httpretty.activate
+    def test_pull_image(self):
+        register_token_url()
+
+        httpretty.register_uri(
+            httpretty.GET, "https://kf.kobotoolbox.org/api/v2/assets/5678/data/9/attachments/0/",
+            body="a pretty picture"
+        )
+
+        kobo = Kobo("user", "1234")
+
+        file_path = f'{int(time())}_test_pull_image.png'
+
+        try:
+            kobo.pull_image(file_path, "5678", "9", "0")
+            with open(file_path, 'rb') as fh:
+                content = fh.read().decode('utf-8')
+        except Exception as e:
+            os.remove(file_path)
+            raise e
+        os.remove(file_path)
+
+        assert content == "a pretty picture"
+
+        assert dict(httpretty.last_request().headers)["Authorization"] == "Token what are you token about?"

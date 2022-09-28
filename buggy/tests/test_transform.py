@@ -6,7 +6,9 @@ from functools import partial
 
 from ..transform import (
     pull_and_transform_data,
-    mapping_transform
+    mapping_transform,
+    convert_key_transform,
+    observation_field_transformer
 )
 
 from ..kobo import Kobo
@@ -65,3 +67,36 @@ class TestMappingTransform(unittest.TestCase):
 
     def test_mapping_key_missing(self):
         assert self.transformer({"survey_field": "bad_value"}) == ("output_field", "missing")
+
+class TestConvertKeyTransform(unittest.TestCase):
+    def setUp(self):
+        entry_key = "survey_field"
+        output_key = "output_field"
+        default = "missing"
+        self.transformer = partial(
+            convert_key_transform, entry_key,
+            output_key, default
+        )
+
+    def test_entry_key_present(self):
+        assert self.transformer({"survey_field": "good_value"}) == ("output_field", "good_value")
+
+    def test_entry_key_missing(self):
+        assert self.transformer({}) == ("output_field", "missing")
+
+class TestObservationFieldTransformer(unittest.TestCase):
+    def test_base_case(self):
+        observation_field_transformers = [
+            partial(
+                convert_key_transform,
+                "survey_field",
+                "output_field",
+                None
+            )
+        ]
+        entry = {
+            "survey_field": "good_value"
+        }
+        result = observation_field_transformer(observation_field_transformers, entry)
+
+        assert result == ('observation_fields', {"output_field": "good_value"})

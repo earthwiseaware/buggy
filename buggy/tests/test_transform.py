@@ -2,10 +2,11 @@ import unittest
 import httpretty
 import json
 
-from buggy import kobo
+from functools import partial
 
 from ..transform import (
-    pull_and_transform_data
+    pull_and_transform_data,
+    mapping_transform
 )
 
 from ..kobo import Kobo
@@ -42,3 +43,25 @@ class TestPullAndTransformData(unittest.TestCase):
         ]
 
         assert transformed_data == expected_data
+
+class TestMappingTransform(unittest.TestCase):
+    def setUp(self):
+        entry_key = "survey_field"
+        output_key = "output_field"
+        mapping = {
+            "good_value": "good",
+        }
+        default = "missing"
+        self.transformer = partial(
+            mapping_transform, entry_key,
+            output_key, mapping, default
+        )
+
+    def test_entry_key_present(self):
+        assert self.transformer({"survey_field": "good_value"}) == ("output_field", "good")
+
+    def test_entry_key_missing(self):
+        assert self.transformer({}) == ("output_field", "missing")
+
+    def test_mapping_key_missing(self):
+        assert self.transformer({"survey_field": "bad_value"}) == ("output_field", "missing")

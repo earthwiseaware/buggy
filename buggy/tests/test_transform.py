@@ -8,7 +8,8 @@ from ..transform import (
     pull_and_transform_data,
     mapping_transform,
     convert_key_transform,
-    observation_field_transformer
+    observation_field_transformer,
+    image_transformer
 )
 
 from ..kobo import Kobo
@@ -100,3 +101,34 @@ class TestObservationFieldTransformer(unittest.TestCase):
         result = observation_field_transformer(observation_field_transformers, entry)
 
         assert result == ('observation_fields', {"output_field": "good_value"})
+
+class TestImageTransformer(unittest.TestCase):
+    def test_base_case(self):
+        entry = {
+            "photo1": "bug.png",
+            "photo3": "plant.png",
+            "_attachments": [
+                {
+                    "filename": "a/long/url/bug.png",
+                    "instance": 1,
+                    "id": 2
+                },
+                {
+                    "filename": "a/long/url/plant.png",
+                    "instance": 3,
+                    "id": 4
+                },
+                {
+                    "filename": "a/long/url/other.txt",
+                    "instance": 5,
+                    "id": 6
+                }
+            ]
+        }
+        result = image_transformer(["photo3", "photo2", "photo1"], entry)
+        expected = [
+            {"instance": 3, "id": 4},
+            {"instance": 1, "id": 2}
+        ]
+        assert result[0] == "images"
+        assert result[1] == expected

@@ -2,10 +2,10 @@ from functools import partial
 
 from .kobo import Kobo
 
-def mapping_transform(entry_key, output_key, mapping, default, entry):
+def mapping_transform(entry_key: str, output_key: str, mapping: dict, default, entry: dict) -> tuple:
     return output_key, mapping.get(entry.get(entry_key), default)
 
-def convert_key_transform(entry_key, output_key, default, entry):
+def convert_key_transform(entry_key: str, output_key: str, default, entry: dict) -> tuple:
     return output_key, entry.get(entry_key, default)
 
 survey_transform = partial(
@@ -111,15 +111,43 @@ OBSERVATION_FIELD_TRANSFORMERS = [
     wetness_transform,
 ]
 
-def observation_field_transformer(transformers: list, entry: dict):
+def observation_field_transformer(transformers: list, entry: dict) -> tuple:
     observation_fields = {}
     for transformer in transformers:
         key, value = transformer(entry)
         observation_fields[key] = value
     return "observation_fields", observation_fields
 
+def image_transformer(image_fields, entry: dict) -> tuple:
+    attachments = {
+        info["filename"].split("/")[-1]: info
+        for info in entry["_attachments"]
+    }
+    order = [
+        entry[field] 
+        for field in image_fields
+        if entry.get(field)
+    ]
+    image_info = [
+        {
+            "instance": attachments[filename]["instance"],
+            "id": attachments[filename]["id"]
+        }
+        for filename in order
+    ]
+    return "images", image_info
+
 BUGGY_TRANSFORMERS = [
     partial(observation_field_transformer, OBSERVATION_FIELD_TRANSFORMERS),
+    partial(
+        image_transformer,
+        [
+            "arthropod_documentation/arthropod_photo_1",
+            "arthropod_documentation/arthropod_photo_2",
+            "arthropod_documentation/arthropod_photo_3",
+            "host_documentation/host_photo"
+        ]
+    )
 ]
 
 def pull_and_transform_data(kobo: Kobo, uid: str, transformers: list) -> dict:

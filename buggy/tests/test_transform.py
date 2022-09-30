@@ -5,6 +5,7 @@ import json
 from functools import partial
 
 from ..transform import (
+    notes_transform,
     pull_and_transform_data,
     mapping_transform,
     convert_key_transform,
@@ -132,3 +133,34 @@ class TestImageTransformer(unittest.TestCase):
         ]
         assert result[0] == "images"
         assert result[1] == expected
+
+
+NOTE = """
+The Thing They Forgot:
+I had a great time. :)
+
+My Notes:
+Hello there!
+""".strip()
+class TestNotesTransform(unittest.TestCase):
+    def test_base_case(self):
+        entry = {
+            "my note": "Hello there!",
+            "postscript": "I had a great time. :)"
+        }
+        transformer = partial(
+            notes_transform,
+            {
+                "my note": "My Notes:",
+                "postscript": "The Thing They Forgot:",
+                "other stuff": "Other:"
+            },
+            [
+                "postscript",
+                "other stuff",
+                "my note"
+            ]
+        )
+        key, transformed = transformer(entry)
+        assert key == "notes"
+        assert transformed == NOTE

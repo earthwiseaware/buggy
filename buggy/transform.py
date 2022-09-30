@@ -205,10 +205,14 @@ BUGGY_TRANSFORMERS = [
 def pull_and_transform_data(kobo: Kobo, uid: str, transformers: list) -> dict:
     data = kobo.pull_data(uid)
     transformed_data = []
+    failed = 0
     for entry in data:
-        transformed = {}
-        for transformer in transformers:
-            key, value = transformer(entry)
-            transformed[key] = value
-        transformed_data.append(transformed)
-    return transformed_data
+        try:
+            transformed = {}
+            for transformer in transformers:
+                key, value = transformer(entry)
+                transformed[key] = value
+            transformed_data.append(transformed)
+        except Exception:
+            failed += 1
+    return transformed_data, failed

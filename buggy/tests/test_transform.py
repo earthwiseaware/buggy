@@ -39,7 +39,7 @@ class TestPullAndTransformData(unittest.TestCase):
         transformer = lambda entry: ("field", entry["field1"] + entry["field2"])
         transformers = [transformer]
 
-        transformed_data = pull_and_transform_data(kobo, uid, transformers)
+        transformed_data, failed = pull_and_transform_data(kobo, uid, transformers)
 
         expected_data = [
             {"field": 3},
@@ -47,6 +47,7 @@ class TestPullAndTransformData(unittest.TestCase):
         ]
 
         assert transformed_data == expected_data
+        assert failed == 0
 
 class TestMappingTransform(unittest.TestCase):
     def setUp(self):

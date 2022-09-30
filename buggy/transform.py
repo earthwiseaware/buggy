@@ -100,6 +100,48 @@ wetness_transform = partial(
     None
 )
 
+INAT_ARTHROPOD_TAXA_IDS = {
+    "anisoptera": 47792,
+    "aphidomorpha": 901813,
+    "araneae": 47118,
+    "blattodea": 81769,
+    "cicadomorpha": 372849,
+    "coleoptera": 47208,
+    "diptera": 47822,
+    "hemiptera": 47744,
+    "hymenoptera_1": 47201,
+    "hymenoptera_2": 47336,
+    "lepidoptera": 47157,
+    "opiliones": 47367,
+    "trichoptera": 62164,
+    "other": 47120,
+    "unidentified": 47120,
+}
+arthropod_taxa_transform = partial(
+    mapping_transform,
+    "arthropod_documentation/arthropod_group",
+    "taxa",
+    INAT_ARTHROPOD_TAXA_IDS,
+    None
+)
+
+
+INAT_HOST_TAXA_IDS = {
+    "angiospermae": 47125,
+    "bryophyta": 311249,
+    "fungi": 47170,
+    "pinopsida": 136329,
+    "poales": 47162,
+    "polypodiopsida": 121943,
+}
+host_taxa_transform = partial(
+    mapping_transform,
+    "host_documentation/host_group",
+    "EwA - Host Documentation",
+    INAT_HOST_TAXA_IDS,
+    None
+)
+
 OBSERVATION_FIELD_TRANSFORMERS = [
     survey_transform,
     development_transform,
@@ -109,6 +151,7 @@ OBSERVATION_FIELD_TRANSFORMERS = [
     quantity_transform,
     length_transform,
     wetness_transform,
+    host_taxa_transform
 ]
 
 def observation_field_transformer(transformers: list, entry: dict) -> tuple:
@@ -199,7 +242,8 @@ BUGGY_TRANSFORMERS = [
             "host_documentation/host_phenology_other",
             "host_documentation/host_more"
         ]
-    )
+    ),
+    arthropod_taxa_transform
 ]
 
 def pull_and_transform_data(kobo: Kobo, uid: str, transformers: list) -> dict:

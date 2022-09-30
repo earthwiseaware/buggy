@@ -138,10 +138,10 @@ def image_transformer(image_fields, entry: dict) -> tuple:
     return "images", image_info
 
 def longitude_transform(entry: dict) -> tuple:
-    return 'longitude', entry['geolocation'][1]
+    return 'longitude', entry['_geolocation'][1]
 
 def latitude_transform(entry: dict) -> tuple:
-    return 'longitude', entry['geolocation'][0]
+    return 'latitude', entry['_geolocation'][0]
 
 def notes_transform(sections: dict, order: list, entry: dict) -> tuple:
     

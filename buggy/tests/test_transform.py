@@ -129,8 +129,7 @@ class TestImageTransformer(unittest.TestCase):
         }
         result = image_transformer(["photo3", "photo2", "photo1"], entry)
         expected = [
-            {"instance": 3, "id": 4},
-            {"instance": 1, "id": 2}
+            4, 2
         ]
         assert result[0] == "images"
         assert result[1] == expected

@@ -172,10 +172,7 @@ def image_transformer(image_fields, entry: dict) -> tuple:
         if entry.get(field)
     ]
     image_info = [
-        {
-            "instance": attachments[filename]["instance"],
-            "id": attachments[filename]["id"]
-        }
+        attachments[filename]["id"]
         for filename in order
     ]
     return "images", image_info
@@ -200,6 +197,9 @@ def notes_transform(sections: dict, order: list, entry: dict) -> tuple:
                 "", ""
             ])
     return "notes", notes.strip()
+
+def is_valid_transform(entry: dict) -> tuple:
+    return "is_valid", entry.get("_validation_status", {}).get("uid") == "validation_status_approved"
 
 BUGGY_TRANSFORMERS = [
     partial(observation_field_transformer, OBSERVATION_FIELD_TRANSFORMERS),
@@ -243,7 +243,12 @@ BUGGY_TRANSFORMERS = [
             "host_documentation/host_more"
         ]
     ),
-    arthropod_taxa_transform
+    arthropod_taxa_transform,
+    partial(
+        convert_key_transform,
+        "_id", "instance", None
+    ),
+    is_valid_transform
 ]
 
 def pull_and_transform_data(kobo: Kobo, uid: str, transformers: list) -> dict:

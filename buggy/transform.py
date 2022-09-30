@@ -2,10 +2,10 @@ from functools import partial
 
 from .kobo import Kobo
 
-def mapping_transform(entry_key: str, output_key: str, mapping: dict, default, entry: dict) -> tuple:
+def mapping_transform(entry_key: str, output_key: str, mapping: dict, default, entry: dict, **kwargs) -> tuple:
     return output_key, mapping.get(entry.get(entry_key), default)
 
-def convert_key_transform(entry_key: str, output_key: str, default, entry: dict) -> tuple:
+def convert_key_transform(entry_key: str, output_key: str, default, entry: dict, **kwargs) -> tuple:
     return output_key, entry.get(entry_key, default)
 
 survey_transform = partial(
@@ -142,6 +142,10 @@ host_taxa_transform = partial(
     None
 )
 
+def identifier_transform(entry_key: str, output_key: str, entry: dict, **kwargs) -> tuple():
+    identifier = kwargs['identifier']
+    return output_key, identifier.get_identifier(entry[entry_key]) if entry_key in entry else None
+
 OBSERVATION_FIELD_TRANSFORMERS = [
     survey_transform,
     development_transform,
@@ -151,17 +155,22 @@ OBSERVATION_FIELD_TRANSFORMERS = [
     quantity_transform,
     length_transform,
     wetness_transform,
-    host_taxa_transform
+    host_taxa_transform,
+    partial(
+        identifier_transform,
+        "session_info/input_email",
+        "EwA - Observer Code"
+    )
 ]
 
-def observation_field_transformer(transformers: list, entry: dict) -> tuple:
+def observation_field_transformer(transformers: list, entry: dict, **kwargs) -> tuple:
     observation_fields = {}
     for transformer in transformers:
-        key, value = transformer(entry)
+        key, value = transformer(entry, **kwargs)
         observation_fields[key] = value
     return "observation_fields", observation_fields
 
-def image_transformer(image_fields, entry: dict) -> tuple:
+def image_transformer(image_fields, entry: dict, **kwargs) -> tuple:
     attachments = {
         info["filename"].split("/")[-1]: info
         for info in entry["_attachments"]
@@ -177,13 +186,13 @@ def image_transformer(image_fields, entry: dict) -> tuple:
     ]
     return "images", image_info
 
-def longitude_transform(entry: dict) -> tuple:
+def longitude_transform(entry: dict, **kwargs) -> tuple:
     return 'longitude', entry['_geolocation'][1]
 
-def latitude_transform(entry: dict) -> tuple:
+def latitude_transform(entry: dict, **kwargs) -> tuple:
     return 'latitude', entry['_geolocation'][0]
 
-def notes_transform(sections: dict, order: list, entry: dict) -> tuple:
+def notes_transform(sections: dict, order: list, entry: dict, **kwargs) -> tuple:
     
     assert set(sections) == set(order)
     
@@ -198,7 +207,7 @@ def notes_transform(sections: dict, order: list, entry: dict) -> tuple:
             ])
     return "notes", notes.strip()
 
-def is_valid_transform(entry: dict) -> tuple:
+def is_valid_transform(entry: dict, **kwargs) -> tuple:
     return "is_valid", entry.get("_validation_status", {}).get("uid") == "validation_status_approved"
 
 BUGGY_TRANSFORMERS = [
@@ -251,7 +260,7 @@ BUGGY_TRANSFORMERS = [
     is_valid_transform
 ]
 
-def pull_and_transform_data(kobo: Kobo, uid: str, transformers: list) -> dict:
+def pull_and_transform_data(kobo: Kobo, uid: str, transformers: list, **kwargs) -> dict:
     data = kobo.pull_data(uid)
     transformed_data = []
     failed = 0
@@ -259,7 +268,7 @@ def pull_and_transform_data(kobo: Kobo, uid: str, transformers: list) -> dict:
         try:
             transformed = {}
             for transformer in transformers:
-                key, value = transformer(entry)
+                key, value = transformer(entry, **kwargs)
                 transformed[key] = value
             transformed_data.append(transformed)
         except Exception:

@@ -10,7 +10,8 @@ from ..transform import (
     mapping_transform,
     convert_key_transform,
     observation_field_transformer,
-    image_transformer
+    image_transformer,
+    identifier_transform
 )
 
 from ..kobo import Kobo
@@ -44,6 +45,37 @@ class TestPullAndTransformData(unittest.TestCase):
         expected_data = [
             {"field": 3},
             {"field": 13}
+        ]
+
+        assert transformed_data == expected_data
+        assert failed == 0
+
+    @httpretty.activate
+    def test_kwargs_passed(self):
+        register_token_url()
+
+        kobo_data = [
+            {"field1": 1, "field2": 2},
+            {"field1": 3, "field2": 10},
+        ]
+
+        httpretty.register_uri(
+            httpretty.GET, "https://kf.kobotoolbox.org/api/v2/assets/5678/data.json",
+            body=json.dumps({"results": kobo_data})
+        )
+
+        kobo = Kobo("user", "1234")
+        uid = "5678"
+
+        def transformer(entry: dict, **kwargs) -> tuple:
+            return "field", kwargs["to_pass"]
+        transformers = [transformer]
+
+        transformed_data, failed = pull_and_transform_data(kobo, uid, transformers, to_pass="check for me")
+
+        expected_data = [
+            {"field": "check for me"},
+            {"field": "check for me"}
         ]
 
         assert transformed_data == expected_data
@@ -103,6 +135,19 @@ class TestObservationFieldTransformer(unittest.TestCase):
         result = observation_field_transformer(observation_field_transformers, entry)
 
         assert result == ('observation_fields', {"output_field": "good_value"})
+
+    def test_kwargs_passed(self):
+        def transformer(entry: dict, **kwargs) -> tuple:
+            return "field", kwargs["to_pass"]
+        observation_field_transformers = [
+            transformer
+        ]
+        entry = {
+            "survey_field": "good_value"
+        }
+        result = observation_field_transformer(observation_field_transformers, entry, to_pass="check for me")
+
+        assert result == ('observation_fields', {"field": "check for me"})
 
 class TestImageTransformer(unittest.TestCase):
     def test_base_case(self):
@@ -164,3 +209,27 @@ class TestNotesTransform(unittest.TestCase):
         key, transformed = transformer(entry)
         assert key == "notes"
         assert transformed == NOTE
+
+class FakeIdentifier(object):
+    @staticmethod
+    def get_identifier(user_id):
+        return "a user id"
+
+class TestIdentifierTransform(unittest.TestCase):
+    def test_entry_key_present(self):
+        transform = partial(
+            identifier_transform,
+            "user_id",
+            "identifier"
+        )
+        entry = {"user_id": "me@geemail.com"}
+        assert transform(entry, identifier=FakeIdentifier()) == ("identifier", "a user id")
+
+    def test_entry_key_missing(self):
+        transform = partial(
+            identifier_transform,
+            "user_id",
+            "my_identifier"
+        )
+        entry = {}
+        assert transform(entry, identifier=FakeIdentifier()) == ("my_identifier", None)

@@ -2,16 +2,30 @@ from functools import partial
 
 from gluon.kobo.client import KoboClient as Kobo
 
+OBSERVATION_FIELD_IDS = {
+    "EwA - Arthropod Developmental Stage": 15639,
+    "EwA - Behavior Observed": 12551,
+    "EwA - Host Documentation": 12550,
+    "EwA - Length": 15607,
+    "EwA - Observation Effort-time": 12553,
+    "EwA - Plant Phenology": 14016,
+    "EwA - Quantity": 12629,
+    "EwA - Survey Method": 12552,
+    # Need Real IDs
+    "EwA - Wet Host": 16000,
+    "EwA - Observer Code": 16001
+}
+
 def mapping_transform(entry_key: str, output_key: str, mapping: dict, default, entry: dict, **kwargs) -> tuple:
     return output_key, mapping.get(entry.get(entry_key), default)
 
-def convert_key_transform(entry_key: str, output_key: str, default, entry: dict, **kwargs) -> tuple:
-    return output_key, entry.get(entry_key, default)
+def convert_key_transform(entry_key: str, output_key: str, type, default, entry: dict, **kwargs) -> tuple:
+    return output_key, type(entry.get(entry_key, default))
 
 survey_transform = partial(
     mapping_transform, 
     "session_info/survey_method",
-    "EwA - Survey Method",
+    OBSERVATION_FIELD_IDS["EwA - Survey Method"],
     {
         "incidental": "Opportunistic encounter",
         "walking": "Semi-structured survey",
@@ -25,7 +39,7 @@ survey_transform = partial(
 development_transform = partial(
     mapping_transform,
     "arthropod_documentation/developmental_stage",
-    "EwA - Arthropod Developmental Stage",
+    OBSERVATION_FIELD_IDS["EwA - Arthropod Developmental Stage"],
     {
         "adult": "Adult",
         "egg": "Egg or eggsac",
@@ -40,7 +54,7 @@ development_transform = partial(
 activity_transform = partial(
     mapping_transform,
     "arthropod_documentation/activity",
-    "EwA - Behavior Observed",
+    OBSERVATION_FIELD_IDS["EwA - Behavior Observed"],
     {
         "mating": "Mating",
         "moving": "Moving",
@@ -59,7 +73,7 @@ activity_transform = partial(
 host_phenology_transform = partial(
     mapping_transform,
     "host_documentation/host_phenology",
-    "EwA - Plant Phenology",
+    OBSERVATION_FIELD_IDS["EwA - Plant Phenology"],
     {
         "initial": "Initial growth",
         "breaking": "Breaking leaf buds",
@@ -75,28 +89,32 @@ host_phenology_transform = partial(
 effort_transform = partial(
     convert_key_transform,
     "session_info/Survey_duration",
-    "EwA - Observation Effort-time",
+    OBSERVATION_FIELD_IDS["EwA - Observation Effort-time"],
+    float,
     None
 )
 
 quantity_transform = partial(
     convert_key_transform,
     "arthropod_documentation/quantity",
-    "EwA - Quantity",
+    OBSERVATION_FIELD_IDS["EwA - Quantity"],
+    float,
     None
 )
 
 length_transform = partial(
     convert_key_transform,
     "arthropod_documentation/length",
-    "EwA - Length",
+    OBSERVATION_FIELD_IDS["EwA - Length"],
+    float,
     None
 )
 
 wetness_transform = partial(
     convert_key_transform,
     "host_documentation/wet_support",
-    "EwA - Wet Host",
+    OBSERVATION_FIELD_IDS["EwA - Wet Host"],
+    str,
     None
 )
 
@@ -137,7 +155,7 @@ INAT_HOST_TAXA_IDS = {
 host_taxa_transform = partial(
     mapping_transform,
     "host_documentation/host_group",
-    "EwA - Host Documentation",
+    OBSERVATION_FIELD_IDS["EwA - Host Documentation"],
     INAT_HOST_TAXA_IDS,
     None
 )
@@ -159,7 +177,7 @@ OBSERVATION_FIELD_TRANSFORMERS = [
     partial(
         identifier_transform,
         "session_info/input_email",
-        "EwA - Observer Code"
+        OBSERVATION_FIELD_IDS["EwA - Observer Code"]
     )
 ]
 
@@ -192,6 +210,9 @@ def longitude_transform(entry: dict, **kwargs) -> tuple:
 def latitude_transform(entry: dict, **kwargs) -> tuple:
     return 'latitude', entry['_geolocation'][0]
 
+def accuracy_transform(entry: dict, **kwargs) -> tuple:
+    return 'positional_accuracy', float(entry['session_info/location'].strip().split(' ')[-1])
+
 def notes_transform(sections: dict, order: list, entry: dict, **kwargs) -> tuple:
     
     assert set(sections) == set(order)
@@ -223,10 +244,12 @@ BUGGY_TRANSFORMERS = [
     ),
     longitude_transform,
     latitude_transform,
+    accuracy_transform,
     partial(
         convert_key_transform,
         "session_info/survey_ts",
         "ts",
+        str,
         None
     ),
     partial(
@@ -255,7 +278,7 @@ BUGGY_TRANSFORMERS = [
     arthropod_taxa_transform,
     partial(
         convert_key_transform,
-        "_id", "instance", None
+        "_id", "instance", int, None
     ),
     is_valid_transform
 ]

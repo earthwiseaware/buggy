@@ -1,6 +1,6 @@
 from functools import partial
 
-from .kobo import Kobo
+from gluon.kobo.client import KoboClient as Kobo
 
 def mapping_transform(entry_key: str, output_key: str, mapping: dict, default, entry: dict, **kwargs) -> tuple:
     return output_key, mapping.get(entry.get(entry_key), default)

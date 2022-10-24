@@ -14,9 +14,13 @@ from ..transform import (
     identifier_transform
 )
 
-from ..kobo import Kobo
+from gluon.kobo.client import KoboClient as Kobo
 
-from ..kobo.tests.test_kobo import register_token_url
+def register_token_url():
+    httpretty.register_uri(
+        httpretty.GET, "https://kf.kobotoolbox.org/token?format=json",
+        body=json.dumps({"token": "what are you token about?"})
+    )
 
 class TestPullAndTransformData(unittest.TestCase):
 

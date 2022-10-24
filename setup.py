@@ -10,5 +10,6 @@ setup(
     install_requires=[
         'httpretty',
         'pytest',
+        'gluon @ git+ssh://git@github.com/networkearth/gluon'
     ]
 )

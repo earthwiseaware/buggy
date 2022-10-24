@@ -114,7 +114,7 @@ class TestConvertKeyTransform(unittest.TestCase):
         default = "missing"
         self.transformer = partial(
             convert_key_transform, entry_key,
-            output_key, default
+            output_key, str, default
         )
 
     def test_entry_key_present(self):
@@ -130,6 +130,7 @@ class TestObservationFieldTransformer(unittest.TestCase):
                 convert_key_transform,
                 "survey_field",
                 "output_field",
+                str,
                 None
             )
         ]

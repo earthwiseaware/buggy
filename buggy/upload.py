@@ -39,5 +39,5 @@ def upload_data(data: dict, uid: str, inaturalist_client: iNaturalist, kobo_clie
         # attach the observation field values
         for field_id, value in record['observation_fields']:
             inaturalist_client.attach_observation_field(
-                observation_id, field_id, value
+                observation_id, int(field_id), value
             )

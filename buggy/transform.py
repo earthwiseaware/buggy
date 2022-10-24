@@ -210,6 +210,9 @@ def longitude_transform(entry: dict, **kwargs) -> tuple:
 def latitude_transform(entry: dict, **kwargs) -> tuple:
     return 'latitude', entry['_geolocation'][0]
 
+def accuracy_transform(entry: dict, **kwargs) -> tuple:
+    return 'positional_accuracy', float(entry['session_info/location'].strip().split(' ')[-1])
+
 def notes_transform(sections: dict, order: list, entry: dict, **kwargs) -> tuple:
     
     assert set(sections) == set(order)
@@ -241,6 +244,7 @@ BUGGY_TRANSFORMERS = [
     ),
     longitude_transform,
     latitude_transform,
+    accuracy_transform,
     partial(
         convert_key_transform,
         "session_info/survey_ts",

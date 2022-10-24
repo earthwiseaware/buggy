@@ -37,7 +37,7 @@ def upload_data(data: dict, uid: str, inaturalist_client: iNaturalist, kobo_clie
             os.remove(image_path)
 
         # attach the observation field values
-        for field_id, value in record['observation_fields']:
+        for field_id, value in record['observation_fields'].items():
             inaturalist_client.attach_observation_field(
                 observation_id, int(field_id), value
             )
